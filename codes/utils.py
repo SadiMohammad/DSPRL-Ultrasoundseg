@@ -11,22 +11,26 @@ def to_one_hot(value,size):
 
 
 class Dataset_ROM(Dataset):
-    def __init__(self, image_paths, mask_paths, size, convert='L'):
+    def __init__(self, image_paths, mask_paths, size, convert='RGB'): #for deeplab RGB, rather L
         self.image_paths = image_paths
         self.mask_paths = mask_paths
         self.convert = convert
-        self.transforms = transforms.Compose([
-            # transforms.Grayscale(num_output_channels=3),
+        self.transformsImage = transforms.Compose([
+            transforms.Grayscale(num_output_channels=3),
             transforms.Resize((size, size)),
             transforms.ToTensor(),
         ])
-
+        self.transformMask = transforms.Compose([
+            # transforms.Grayscale(num_output_channels=3),  # don't need
+            transforms.Resize((size, size)),
+            transforms.ToTensor(),
+        ])
     def __getitem__(self, index):
         image = Image.open(self.image_paths[index]).convert(self.convert)
         image = image.filter(ImageFilter.BLUR)
         mask = Image.open(self.mask_paths[index]).convert('L')
-        t_image = self.transforms(image)
-        t_mask = self.transforms(mask)
+        t_image = self.transformsImage(image)
+        t_mask = self.transformMask(mask)
         return t_image, t_mask
 
     def __len__(self):
@@ -96,8 +100,10 @@ def evalModel(model, validDataset, device):
 
         preds = model(images)
         predMasks = preds
-        # preds = preds['out']
-        # predMasks = torch.sigmoid(preds)
+        # for deeplabv3
+        preds = preds['out']
+        predMasks = torch.sigmoid(preds)
+        #
         predMasks = (predMasks > 0.5).float()
 
         valDice = torch.mean(Loss(trueMasks, predMasks).dice_coeff())

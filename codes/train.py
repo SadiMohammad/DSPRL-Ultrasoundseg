@@ -17,15 +17,13 @@ from losses import *
 sys.path.append('..')
 # from models import UNet
 # from models import CleanU_Net
-from models import LungNet
+# from models import LungNet
 
 
 class config:
     def __init__(self, scheme):
         # parser config
         self.scheme = scheme
-        print(scheme)
-        print(type(scheme))
         config_file = "./config.ini"
         parser = ConfigParser()
         parser.read(config_file)
@@ -44,13 +42,15 @@ class config:
         self.modelWeightLoad = parser[self.scheme].getboolean("modelWeightLoad")
         self.modelWeight = parser[self.scheme].get("modelWeight")
         self.saveBestModel = parser[self.scheme].getboolean("saveBestModel")
+        self.loadCkpt = parser[self.scheme].getboolean("loadCkpt")
 
 
 class train(config):
     def __init__(self, scheme):
         super().__init__(scheme)
 
-    def main(self, model, device):
+    def main(self, model, optimizer, device):
+        optimizer = optimizer
         modelName = model.__class__.__name__
         imageFiles = glob.glob(self.imagesPath + "/*" + ".jpg")
         maskFiles = glob.glob(self.masksPath + "/*" + ".tif")
@@ -74,29 +74,22 @@ class train(config):
             '''.format(modelName, self.epochs, self.batchSize, self.learningRate, len(imageFiles), len(imgTrain),
                        len(imgVal), str(self.saveBestModel), str(device)))
 
-        # # params = [p for p in model_ft.parameters() if p.requires_grad]
-        # optimizer = optim.SGD(model.parameters(), lr=self.learningRate, momentum=0.9, weight_decay=0.00005)
-
-        optimizer = optim.Adam(model.parameters(),
-                               lr=self.learningRate,
-                               weight_decay=0.0005)
-
         datasetTrain = Dataset_ROM(imgTrain, maskTrain, self.size, convert='L')
         loaderTrain = torch.utils.data.DataLoader(datasetTrain, batch_size=self.batchSize, shuffle=True)
 
         datasetValid = Dataset_ROM(imgVal, maskVal, self.size, convert='L')
         loaderValid = torch.utils.data.DataLoader(datasetValid, batch_size=self.batchSize, shuffle=True)
 
-        bestDiceCoeff = 0.4607001204974949
+        bestDiceCoeff = 0.47202138930913945
+
+        optimizer.zero_grad()
 
         for epoch in range(self.epochs):
             print('Starting epoch {}/{}.'.format(epoch + 1, self.epochs))
             model.train()
 
-            epochWorstDiceCoeff = 1
             epochTrainLoss = 0
             epochTrainDice = 0
-            epochValDice = 0
             for i_train, sample_train in enumerate(tqdm(loaderTrain)):
                 images = sample_train[0].to(device)
                 trueMasks = sample_train[1].to(device)
@@ -104,44 +97,41 @@ class train(config):
                 predMasks = preds
 
                 # for deeplabv3
-                # preds = preds['out'] 
-                # predMasks = torch.sigmoid(preds) 
-                # print(predMasks.values())
-
+                preds = preds['out'] 
+                predMasks = torch.sigmoid(preds) 
+                #
+                
                 mBatchLoss = torch.mean(Loss(trueMasks, predMasks).dice_coeff_loss())
                 epochTrainLoss += mBatchLoss.item()
                 mBatchDice = torch.mean(Loss(trueMasks, predMasks).dice_coeff())
                 epochTrainDice += mBatchDice.item()
 
-                optimizer.zero_grad()
                 mBatchLoss.backward()
-                optimizer.step()
 
-                model.eval()
-                with torch.no_grad():
-                    mBatchValDice = evalModel(model, loaderValid, device)
-                    epochValDice += mBatchValDice
-
-                saveCheckpoint = {'epoch': epoch,
+            model.eval()
+            with torch.no_grad():
+                epochValDice = evalModel(model, loaderValid, device)
+            saveCheckpoint = {'epoch': epoch,
                                   'input_size': self.size,
                                   'best_dice': bestDiceCoeff,
                                   'optimizer_state_dict': optimizer.state_dict(),
                                   'model_state_dict': model.state_dict()}
 
-                if mBatchValDice > bestDiceCoeff:
-                    bestDiceCoeff = mBatchValDice
-                    torch.save(saveCheckpoint,
-                               self.checkpointsPath + '/' + modelName + '/' + '{}_epoch-{}_dice-{}.pth'.format(
-                                   str(datetime.datetime.now()),
-                                   (epoch + 1), bestDiceCoeff))
-                    print('Checkpoint {} saved !'.format(epoch + 1))
-                    # best_model = copy.deepcopy(model)
-                if mBatchValDice < epochWorstDiceCoeff:
-                    epochWorstDiceCoeff = mBatchValDice
+            if epochValDice > bestDiceCoeff:
+                bestDiceCoeff = epochValDice
+                torch.save(saveCheckpoint,
+                            self.checkpointsPath + '/' + modelName + '/' + '{}_epoch-{}_dice-{}.pth'.format(
+                                str(datetime.datetime.now()),
+                                (epoch + 1), bestDiceCoeff))
+                print('Checkpoint {} saved !'.format(epoch + 1))
+                # best_model = copy.deepcopy(model)
 
-            print('Epoch finished ! Epoch Train Dice Coeff: {}'.format(epochTrainDice / (i_train + 1)))
-            print(' ! Epoch Worst Validation Dice Coeff: {}'.format(epochWorstDiceCoeff))
-            print(' ! Epoch Validation Dice Coeff: {}'.format(epochValDice / (i_train + 1)))
+            if epoch%5 == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+
+            print(' ! Epoch Train Dice Coeff: {}'.format(epochTrainDice / (i_train + 1)))
+            print(' ! Epoch Validation Dice Coeff: {}'.format(epochValDice))
             print(' ! Best Validation Dice Coeff: {}'.format(bestDiceCoeff))
 
 
@@ -150,24 +140,29 @@ if __name__ == "__main__":
     argParser.add_argument('--config_scheme', help='configuration for train.py', required=True)
     args = argParser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = LungNet(1, 1).to(device)
-    # checkpoint = torch.load(train(args.config_scheme).checkpointsPath + '/' + modelName + '/' + '2019-08-01 04:39:48.331969_epoch-10_dice-0.7213704585097731.pth')
-    # model.load_state_dict(checkpoint['model_state_dict'])
-	# optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-	# epoch = checkpoint['epoch']
-	# loss = checkpoint['loss']
-    # model = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
+    # model = LungNet(1, 1).to(device)
+    model = torchvision.models.segmentation.deeplabv3_resnet101(pretrained=False, num_classes=1)
     modelName = model.__class__.__name__
     model = model.to(device)
-    checkpoint = torch.load(train(args.config_scheme).checkpointsPath + '/' + modelName + '/' + train(args.config_scheme).modelWeight)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # params = [p for p in model_ft.parameters() if p.requires_grad]
+    # optimizer = optim.SGD(model.parameters(), lr=self.learningRate, momentum=0.9, weight_decay=0.00005)
+    optimizer = optim.Adam(model.parameters(),
+                            lr=train(args.config_scheme).learningRate,
+                            weight_decay=0.0005)
+    if train(args.config_scheme).loadCkpt:
+        print('#####weight loaded####')
+        checkpoint = torch.load(train(args.config_scheme).checkpointsPath + '/' + modelName + '/' + train(args.config_scheme).modelWeight)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # epoch = checkpoint['epoch']
+        # loss = checkpoint['loss']
     try:
         # Create model Directory
         checkpointDir = train(args.config_scheme).checkpointsPath + '/' + modelName
         if not (os.path.exists(checkpointDir)):
             os.mkdir(checkpointDir)
             print("\nDirectory ", modelName, " Created \n")
-        train(args.config_scheme).main(model, device)
+        train(args.config_scheme).main(model, optimizer, device)
     except KeyboardInterrupt:
         torch.save(model.state_dict(),
                    train(args.config_scheme).checkpointsPath + '/' + model.__class__.__name__ + '/' + 'INTERRUPTED.pth')

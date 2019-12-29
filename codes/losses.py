@@ -31,4 +31,8 @@ class Loss:
 
     def iou_calc_loss(self):
         return -((self.intersection + self.smooth) / (self.union + self.smooth))
+    
+    def bcelogitloss(self):
+        loss = torch.nn.BCEWithLogitsLoss(self.y_pred_f, self.f.y_true_f)
+        return loss
 
