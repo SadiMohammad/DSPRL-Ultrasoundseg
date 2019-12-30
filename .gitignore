@@ -13,3 +13,7 @@ codes/temp.py
 codes/1.tif
 codes/temp.py
 codes/.ipynb_checkpoints/
+logs/*
+!logs/placeholder.txt
+!logs/history/placeholder.txt
+!logs/out/placeholder.txt

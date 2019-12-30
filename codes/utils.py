@@ -3,15 +3,19 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 from losses import *
 import numpy as np
+from configparser import ConfigParser
+import os
+import sys
 
-def to_one_hot(value,size):
-    np_one_hot = np.zeros(shape= size)
-    np_one_hot[value]=1
+
+def to_one_hot(value, size):
+    np_one_hot = np.zeros(shape=size)
+    np_one_hot[value] = 1
     return np_one_hot
 
 
 class Dataset_ROM(Dataset):
-    def __init__(self, image_paths, mask_paths, size, convert='RGB'): #for deeplab RGB, rather L
+    def __init__(self, image_paths, mask_paths, size, convert='RGB'):  # for deeplab RGB, rather L
         self.image_paths = image_paths
         self.mask_paths = mask_paths
         self.convert = convert
@@ -25,6 +29,7 @@ class Dataset_ROM(Dataset):
             transforms.Resize((size, size)),
             transforms.ToTensor(),
         ])
+
     def __getitem__(self, index):
         image = Image.open(self.image_paths[index]).convert(self.convert)
         image = image.filter(ImageFilter.BLUR)
@@ -38,7 +43,7 @@ class Dataset_ROM(Dataset):
 
 
 class Dataset_RAM(Dataset):
-    def __init__(self, dir_data, files, filepath_labels_csv, convert='RGB', transform=None,N_VAR_1 = 168,N_VAR_2 = 11,N_VAR_3 = 7):
+    def __init__(self, dir_data, files, filepath_labels_csv, convert='RGB', transform=None, N_VAR_1=168, N_VAR_2=11, N_VAR_3=7):
         self.dir_data = dir_data
         self.convert = convert
         self.transform = transform
@@ -47,11 +52,11 @@ class Dataset_RAM(Dataset):
         self.N_VAR_2 = N_VAR_2
         self.N_VAR_3 = N_VAR_3
         self.df = pd.read_csv(filepath_labels_csv)
-        self.id2label = {x:[t1, t2, t3] for x,t1,t2,t3 in zip(self.df['fileID'].values,
-                                                              self.df['targetVar1'].values,
-                                                              self.df['targetVar2'].values,self.df['targetVar3'].values)
+        self.id2label = {x: [t1, t2, t3] for x, t1, t2, t3 in zip(self.df['fileID'].values,
+                                                                  self.df['targetVar1'].values,
+                                                                  self.df['targetVar2'].values, self.df['targetVar3'].values)
                          }
-        self.image=[]
+        self.image = []
         self.images = []
         self.labels1 = []
         self.labels2 = []
@@ -63,7 +68,7 @@ class Dataset_RAM(Dataset):
             self.labels2.append(label2)
             self.labels3.append(label3)
 
-    def get_item(self,file):
+    def get_item(self, file):
         path_img = os.path.join(self.dir_data, file + '.png')
         image = Image.open(path_img).convert(self.convert)
         label1 = to_one_hot(
@@ -92,6 +97,7 @@ class Dataset_RAM(Dataset):
     def __getitem__(self, idx):
         return self.images[idx].to(device), self.labels1[idx].to(device), self.labels2[idx].to(device), self.labels3[idx].to(device)
 
+
 def evalModel(model, validDataset, device):
     totValDice = 0
     for i_valid, sample_valid in enumerate(validDataset):
@@ -102,7 +108,7 @@ def evalModel(model, validDataset, device):
         predMasks = preds
         # for deeplabv3
         preds = preds['out']
-        predMasks = torch.sigmoid(preds)
+        # predMasks = torch.sigmoid(preds)
         #
         predMasks = (predMasks > 0.5).float()
 
@@ -130,6 +136,36 @@ class Dataset_RAM_TEST(Dataset):
 
     def __len__(self):
         return len(self.image_paths)
+
+
+class RunHistory:
+    def __init__(self, time_stamp, train_parser, filepath):
+        self.time_stamp = time_stamp
+        self.filepath = filepath
+        self.train_parser = train_parser
+
+    def save_run_history(self):
+        config = ConfigParser()
+        config_dict = dict(self.train_parser)
+        config['DEFAULT'] = config_dict
+        with open(os.path.join(self.filepath, self.time_stamp + '.ini'), 'w') as configfile:
+            config.write(configfile)
+
+
+class Logger(object):
+    def __init__(self, path):
+        self.terminal = sys.stdout
+        self.log = open(path, "a+")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
+        pass
 
 
 if __name__ == "__main__":
