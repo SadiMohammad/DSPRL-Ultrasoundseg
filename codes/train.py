@@ -107,8 +107,7 @@ class Train(Config):
 
                 # for deeplabv3
                 preds = preds['out']
-                predMasks = preds
-                # predMasks = torch.sigmoid(preds)  # for bceloss use preds
+                predMasks = torch.sigmoid(preds)  # for bceloss use preds
                 #
 
                 mBatchLoss = torch.mean(
@@ -165,7 +164,7 @@ if __name__ == "__main__":
         train.logOutPath, '{}.out'.format(time_stamp)))
     # params = [p for p in model_ft.parameters() if p.requires_grad]
     # optimizer = optim.SGD(model.parameters(), lr=self.learningRate, momentum=0.9, weight_decay=0.00005)
-    optimizer = getattr(optim, train.optimizer)(model.parameters(), momentum=0.9,  # for sgd
+    optimizer = getattr(optim, train.optimizer)(model.parameters(), #momentum=0.9,  # for sgd
                                                 lr=train.learningRate,
                                                 weight_decay=0.0005)
     if train.loadCkpt:

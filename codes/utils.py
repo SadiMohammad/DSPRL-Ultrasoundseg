@@ -105,10 +105,9 @@ def evalModel(model, validDataset, device):
         trueMasks = sample_valid[1].to(device)
 
         preds = model(images)
-        predMasks = preds
         # for deeplabv3
         preds = preds['out']
-        # predMasks = torch.sigmoid(preds)
+        predMasks = torch.sigmoid(preds)
         #
         predMasks = (predMasks > 0.5).float()
 

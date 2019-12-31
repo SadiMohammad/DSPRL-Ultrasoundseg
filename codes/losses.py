@@ -24,8 +24,10 @@ class Loss:
                     torch.sum(self.y_pred_f_sigmoid, dim=1))
 
     def dice_coeff(self):
-        coeff = ((2. * self.intersection + self.smooth) /
-                 (self.sum + self.smooth))
+        intersection = torch.sum(self.y_true_f * self.y_pred_f, dim=1)
+        sum = (torch.sum(self.y_true_f, dim=1) +
+               torch.sum(self.y_pred_f, dim=1))
+        coeff = ((2. * intersection + self.smooth) / (sum + self.smooth))
         return coeff
 
     def dice_coeff_loss(self):
