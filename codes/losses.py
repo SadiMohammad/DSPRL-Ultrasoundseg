@@ -50,5 +50,5 @@ class Loss:
     def bce_logit_with_dice_loss(self):
         bce_loss = self.bce_logit_loss()
         dice_loss = self.dice_coeff_loss()
-        loss = bce_loss + dice_loss
+        loss = bce_loss + 3*dice_loss
         return loss

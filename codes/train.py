@@ -6,6 +6,7 @@ import sys
 import time
 from configparser import ConfigParser
 
+import torch
 from torch import optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -57,8 +58,8 @@ class Train(Config):
 
     def main(self, model, optimizer, device):
         optimizer = optimizer
-        imageFiles = glob.glob(self.imagesPath + "/*" + ".jpg")
-        maskFiles = glob.glob(self.masksPath + "/*" + ".tif")
+        imageFiles = glob.glob(self.imagesPath + "/*" + ".png")
+        maskFiles = glob.glob(self.masksPath + "/*" + ".png")
 
         imgTrain = imageFiles[:int(len(imageFiles) * self.trainRatio)]
         imgVal = imageFiles[int(len(imageFiles) * self.trainRatio):]
@@ -90,7 +91,7 @@ class Train(Config):
         loaderValid = torch.utils.data.DataLoader(
             datasetValid, batch_size=self.batchSize, shuffle=True)
 
-        bestDiceCoeff = 0.4  # float(self.modelWeight.split('-')[-1][:-4])
+        bestDiceCoeff = 0.78  # float(self.modelWeight.split('-')[-1][:-4])
 
         optimizer.zero_grad()
 
@@ -158,6 +159,7 @@ if __name__ == "__main__":
     # model = LungNet(1, 1).to(device)
     model = torchvision.models.segmentation.deeplabv3_resnet101(
         pretrained=False, num_classes=1)
+    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2])
     model = model.to(device)
     train = Train(args)
     sys.stdout = Logger(os.path.join(
