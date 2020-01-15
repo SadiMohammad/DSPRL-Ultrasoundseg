@@ -19,3 +19,4 @@ logs/*
 !logs/out/placeholder.txt
 infer/*
 !infer/placeholder.txt
+dsprl.code-workspace
