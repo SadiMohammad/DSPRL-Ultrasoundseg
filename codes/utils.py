@@ -117,7 +117,7 @@ def evalModel(model, validDataset, device):
     return totValDice / (i_valid + 1)
 
 
-class Dataset_RAM_TEST(Dataset):
+class Dataset_ROM_TEST(Dataset):
     def __init__(self, image_paths, size, convert='L'):
         self.image_paths = image_paths
         self.convert = convert

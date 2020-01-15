@@ -5,8 +5,6 @@ import os
 import sys
 import time
 from configparser import ConfigParser
-import matplotlib.pyplot as plt
-from matplotlib import cm
 
 from torch import optim
 from torch.utils.data import DataLoader
@@ -15,6 +13,8 @@ import torchvision
 
 from utils import *
 from losses import *
+import morphsnakes as ms
+import plot
 
 sys.path.append('..')
 # from models import UNet
@@ -72,21 +72,24 @@ class Test(Config):
             #
 
             predArray = predMasks.detach().cpu().numpy()
+            trueMasksArray = trueMasks.detach().cpu().numpy()
             imagesArray = images.detach().cpu().numpy()
             predArray = np.where(predArray > 0.5, 1, 0)
 
             for b in range(imagesArray.shape[0]):
                 predMaskArray = predArray[b, 0, :, :]
-                imagesArray = imagesArray[b, 0, :, :]
-                # print(predMaskArray)
-                # fig, ax = plt.subplots()
-                # ax.imshow(predMaskArray, cmap='gray')
-                # plt.show()
-                im = Image.fromarray(
-                    np.uint8(predMaskArray*255))
-                savePath = os.path.join(
-                    test.predMaskPath, test.modelName, time_stamp)
-                im.save(os.path.join(savePath, str(i) + '.png'))
+                imgArray = imagesArray[b, 0, :, :]
+                tMaskArray = trueMasksArray[b, 0, :, :]
+                init_ls = predMaskArray
+                callback = ms.visual_callback_2d(imgArray)
+                msPredMask = ms.morphological_chan_vese(imgArray, iterations=20,
+                                                          init_level_set=init_ls,
+                                                          smoothing=3, lambda1=1, lambda2=1,
+                                                          iter_callback=callback)
+
+                
+                savePath = os.path.join(test.predMaskPath, test.modelName, time_stamp)
+                plot.mask_comparision(imgArray, tMaskArray, predMaskArray, msPredMask, os.path.join(savePath, str(i) + '.png'))
                 i += 1
 
 
@@ -105,13 +108,14 @@ if __name__ == "__main__":
     model = model.to(device)
     test = Test(args)
 
-    checkpoint = torch.load(os.path.join(test.checkpointsPath, test.modelName, test.modelWeight))
+    checkpoint = torch.load(os.path.join(
+        test.checkpointsPath, test.modelName, test.modelWeight))
     model.load_state_dict(checkpoint['model_state_dict'])
 
     # sys.stdout = Logger(os.path.join(
     #     test.logOutPath, '{}_test.out'.format(time_stamp)))
 
-    modelPredSavePath=os.path.join(
+    modelPredSavePath = os.path.join(
         test.predMaskPath, test.modelName, time_stamp)
     if not (os.path.exists(modelPredSavePath)):
         os.makedirs(modelPredSavePath)

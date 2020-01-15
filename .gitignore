@@ -17,3 +17,5 @@ logs/*
 !logs/placeholder.txt
 !logs/history/placeholder.txt
 !logs/out/placeholder.txt
+infer/*
+!infer/placeholder.txt
