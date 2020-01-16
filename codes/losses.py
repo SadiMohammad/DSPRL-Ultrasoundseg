@@ -13,6 +13,8 @@ class Flatten:
 class Loss:
     def __init__(self, y_true, y_pred):
         self.smooth = 1e-7
+        self.y_pred = y_pred
+        self.y_true = y_true
         self.y_true_f = Flatten().forward(y_true)
         self.y_pred_f = Flatten().forward(y_pred)
         self.y_pred_f_sigmoid = Flatten().forward(torch.sigmoid(y_pred))
@@ -51,4 +53,39 @@ class Loss:
         bce_loss = self.bce_logit_loss()
         dice_loss = self.dice_coeff_loss()
         loss = bce_loss + 3*dice_loss
+        return loss
+
+    def ac_loss(self):
+        """
+        lenth term
+        """
+
+        # horizontal and vertical directions
+        x = self.y_pred[:, :, 1:, :] - self.y_pred[:, :, :-1, :]
+        y = self.y_pred[:, :, :, 1:] - self.y_pred[:, :, :, :-1]
+
+        delta_x = x[:, :, 1:, :-2]**2
+        delta_y = y[:, :, :-2, 1:]**2
+        delta_u = torch.abs(delta_x + delta_y)
+
+        epsilon = 1e-8
+        w = 1   # equ.(11) in the paper
+        lenth = w * torch.sum(torch.sqrt(delta_u + epsilon))
+
+        """
+        region term
+        """
+
+        C_1 = torch.cuda.FloatTensor(224, 224).fill_(0)
+        C_2 = torch.cuda.FloatTensor(224, 224).fill_(1)
+
+        region_in = torch.abs(torch.sum(
+            self.y_pred[:, 0, :, :] * ((self.y_true[:, 0, :, :] - C_1)**2)))  # equ.(12) in the paper
+        region_out = torch.abs(torch.sum(
+            (1-self.y_pred[:, 0, :, :]) * ((self.y_true[:, 0, :, :] - C_2)**2)))  # equ.(12) in the paper
+
+        lambdaP = 1  # lambda parameter could be various.
+
+        loss = lenth + lambdaP * (region_in + region_out)
+
         return loss
