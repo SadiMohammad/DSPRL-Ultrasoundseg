@@ -1,15 +1,21 @@
 # DSPRL-Ultrasoundseg
 **Train**
-1. cd to codes
+1. cd to `./codes`
 
-2. run the following command for training 
-
-`python train.py --config_filename <config filename with path> --config_scheme <section from config file>`
-example : ```python train.py --config_filename config.ini --config_scheme DEFAULT```
+2. run the following command for training </br>
+&nbsp;  `python train.py --config_filename <config filename with path> --config_scheme <section from config file>`</br>
+&nbsp; &nbsp;  e.g.&nbsp; ```python train.py --config_filename config.ini --config_scheme DEFAULT```
 
 **Inference**
-1. cd to codes
+1. cd to `./codes`
 
-2. run the following command for inference
-`python inferWithMS.py --config_filename <config filename with path> --config_scheme <section from config file>`
-example : ```python inferWithMS.py --config_filename config.ini --config_scheme TEST```
+2. run the following command for inference</br>
+&nbsp;  `python infer.py --config_filename <config filename with path> --config_scheme <section from config file>`</br>
+&nbsp; &nbsp;  e.g.&nbsp; ```python infer.py --config_filename config.ini --config_scheme TEST```
+
+**Inference with MorphSnake**
+1. cd to `./codes`
+
+2. run the following command for inference</br>
+&nbsp;  `python inferWithMS.py --config_filename <config filename with path> --config_scheme <section from config file>`</br>
+&nbsp; &nbsp;  e.g.&nbsp; ```python inferWithMS.py --config_filename config.ini --config_scheme TEST```
