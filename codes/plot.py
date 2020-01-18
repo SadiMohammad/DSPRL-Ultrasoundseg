@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
-def mask_comparision(imgArray, tMaskArray, predMaskArray, msPredMask, saveMaskPath):
+def mask_comparision(imgArray, tMaskArray, predMaskArray, msPredMask, saveMaskPath, prim_dice_score, ms_dice_score):
     fig = plt.figure(figsize=(12, 12), dpi=150)
     fig.clf()
 
@@ -39,7 +39,7 @@ def mask_comparision(imgArray, tMaskArray, predMaskArray, msPredMask, saveMaskPa
     ax4.title.set_text('Pred Mask without MSM')
     ax5.title.set_text('Pred Contour with MSM')
     ax6.title.set_text('Pred Mask with MSM')
-    fig.suptitle('Predicted Mask Variation', fontsize=12)
+    fig.suptitle('Bottleneck Model Dice - {:0.2f} '.format(prim_dice_score) + '| Bottleneck with MS Model Dice - {:0.2f}'.format(ms_dice_score), fontsize=14)
     fig.tight_layout(pad=3.0)
 
     plt.savefig(saveMaskPath)

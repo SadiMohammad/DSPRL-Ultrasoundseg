@@ -6,6 +6,8 @@ import numpy as np
 from configparser import ConfigParser
 import os
 import sys
+import numpy as np
+import morphsnakes as ms
 
 
 def to_one_hot(value, size):
@@ -115,6 +117,54 @@ def evalModel(model, validDataset, device):
         # print(valDice)
         totValDice += valDice.item()
     return totValDice / (i_valid + 1)
+
+
+def evalModelwMSM(model, validDataset, device):
+    totModelDice = 0
+    totMSMDice = 0
+    for i_valid, sample_valid in enumerate(validDataset):
+        images = sample_valid[0].to(device)
+        trueMasks = sample_valid[1].to(device)
+
+        preds = model(images)
+        # for deeplabv3
+        preds = preds['out']
+        predMasks = torch.sigmoid(preds)
+        #
+        '''
+        msm 
+        '''
+        predArray = predMasks.detach().cpu().numpy()
+        # trueMasksArray = trueMasks.detach().cpu().numpy()
+        imagesArray = images.detach().cpu().numpy()
+        # predArray = np.where(predArray > 0.5, 1, 0)
+
+        for b in range(imagesArray.shape[0]):
+            predMaskArray = predArray[b, 0, :, :]
+            # imgArray = ms.rgb2gray(imagesArray[b, :, :, :])   # for deeplabv3
+            imgArray = imagesArray[b, 0, :, :]
+            # tMaskArray = trueMasksArray[b, 0, :, :]
+            init_ls = predMaskArray
+            callback = ms.visual_callback_2d(imgArray)
+            msPredMask = ms.morphological_chan_vese(imgArray, iterations=20,
+                                                    init_level_set=init_ls,
+                                                    smoothing=3, lambda1=1, lambda2=1,
+                                                    iter_callback=callback)
+            if b == 0:
+                msPredArray = msPredMask[np.newaxis, ...]
+            else:
+                msPredArray = np.append(
+                    msPredArray, msPredMask[np.newaxis, ...], axis=0)
+        msPredArray = msPredArray[:, np.newaxis, :, :]
+        msPredTensor = torch.from_numpy(msPredArray).float().cuda()
+        msBatchDice = torch.mean(
+            Loss(trueMasks, msPredTensor).dice_coeff())
+
+        valDice = torch.mean(Loss(trueMasks, predMasks).dice_coeff())
+        # print(valDice)
+        totMSMDice += msBatchDice
+        totModelDice += valDice.item()
+    return totModelDice / (i_valid + 1), totMSMDice/(i_valid + 1)
 
 
 class Dataset_ROM_TEST(Dataset):

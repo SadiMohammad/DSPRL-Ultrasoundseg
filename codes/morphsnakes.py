@@ -64,7 +64,7 @@ __all__ = ['morphological_chan_vese',
            'circle_level_set',
            'checkerboard_level_set',
            'visual_callback_2d'
-          ]
+           ]
 
 
 __version__ = (2, 0, 1)
@@ -366,6 +366,9 @@ def morphological_chan_vese(image, iterations, init_level_set='checkerboard',
         # print(u)
         iter_callback(u)
 
+        # lambda1 = lambda1 + (1-dice_loss(true_mask, u))
+        # lambda2 = lambda2 + dice_loss(true_mask, u)
+
     return u
 
 
@@ -495,13 +498,14 @@ def morphological_geodesic_active_contour(gimage, iterations,
 
     return u
 
+
 def visual_callback_2d(background, fig=None):
     """
     Returns a callback than can be passed as the argument `iter_callback`
     of `morphological_geodesic_active_contour` and
     `morphological_chan_vese` for visualizing the evolution
     of the levelsets. Only works for 2D images.
-    
+
     Parameters
     ----------
     background : (M, N) array
@@ -509,7 +513,7 @@ def visual_callback_2d(background, fig=None):
     fig : matplotlib.figure.Figure
         Figure where results will be drawn. If not given, a new figure
         will be created.
-    
+
     Returns
     -------
     callback : Python function
@@ -517,9 +521,9 @@ def visual_callback_2d(background, fig=None):
         accordingly. This can be passed as the `iter_callback` argument of
         `morphological_geodesic_active_contour` and
         `morphological_chan_vese`.
-    
+
     """
-    
+
     # Prepare the visual environment.
     # if fig is None:
     #     fig = plt.figure()
@@ -542,3 +546,15 @@ def visual_callback_2d(background, fig=None):
         # plt.pause(0.001)
 
     return callback
+
+
+def dice_loss(tmask, predmask):
+    tmask = np.asarray(tmask).astype(np.bool)
+    predmask = np.asarray(predmask).astype(np.bool)
+    intersection = np.logical_and(tmask, predmask)
+    return 2. * intersection.sum() / (tmask.sum() + predmask.sum())
+
+
+def rgb2gray(img):
+    """Convert a RGB image to gray scale."""
+    return 0.2989 * img[0, ...] + 0.587 * img[1, ...] + 0.114 * img[2, ...]
