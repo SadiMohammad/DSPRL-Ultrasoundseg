@@ -22,7 +22,7 @@ class Dataset_ROM(Dataset):
         self.mask_paths = mask_paths
         self.convert = convert
         self.transformsImage = transforms.Compose([
-            transforms.Grayscale(num_output_channels=3),
+            # transforms.Grayscale(num_output_channels=3),
             transforms.Resize((size, size)),
             transforms.ToTensor(),
         ])

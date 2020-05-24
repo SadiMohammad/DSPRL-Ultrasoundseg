@@ -39,7 +39,10 @@ class Loss:
         return 1-loss  # sometimes only (-) used
 
     def iou_calc(self):
-        return (self.intersection + self.smooth)/(self.union + self.smooth)
+        intersection = torch.sum(self.y_true_f * self.y_pred_f, dim=1)
+        union = (torch.sum(self.y_true_f) +
+                 torch.sum(self.y_pred_f)) - self.intersection
+        return (intersection + self.smooth)/(union + self.smooth)
 
     def iou_calc_loss(self):
         return -((self.intersection + self.smooth) / (self.union + self.smooth))
@@ -89,3 +92,14 @@ class Loss:
         loss = lenth + lambdaP * (region_in + region_out)
 
         return loss
+
+
+    def pixel_accuracy(self):
+        # self.y_pred = torch.where(self.y_pred>0.5,torch.Tensor([1]).cuda(),torch.Tensor([0]).cuda())
+        return (torch.sum(self.y_true * self.y_pred))/(torch.sum(self.y_true))
+
+
+if __name__ == "__main__":
+    gt = torch.ones((4, 1, 224, 224))
+    pred = torch.zeros((4, 1, 224, 224))
+    print(Loss(gt, gt).pixel_accuracy())

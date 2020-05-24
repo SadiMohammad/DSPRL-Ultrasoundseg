@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # model = LungNet(1, 1).to(device)
     model = torchvision.models.segmentation.deeplabv3_resnet101(
         pretrained=False, num_classes=1)
-    model = torch.nn.DataParallel(model, device_ids=[0, 1, 2])
+    # model = torch.nn.DataParallel(model, device_ids=[0, 1, 2])
     model = model.to(device)
     train = Train(args)
     sys.stdout = Logger(os.path.join(

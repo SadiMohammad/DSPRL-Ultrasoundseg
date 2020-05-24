@@ -548,13 +548,25 @@ def visual_callback_2d(background, fig=None):
     return callback
 
 
-def dice_loss(tmask, predmask):
+def dice_score(tmask, predmask):
     tmask = np.asarray(tmask).astype(np.bool)
     predmask = np.asarray(predmask).astype(np.bool)
     intersection = np.logical_and(tmask, predmask)
     return 2. * intersection.sum() / (tmask.sum() + predmask.sum())
 
+def iou_score(tmask, predmask):
+    tmask = np.asarray(tmask).astype(np.bool)
+    predmask = np.asarray(predmask).astype(np.bool)
+    intersection = np.logical_and(tmask, predmask)
+    return intersection.sum() / (tmask.sum() + predmask.sum() -intersection.sum())
+
 
 def rgb2gray(img):
     """Convert a RGB image to gray scale."""
     return 0.2989 * img[0, ...] + 0.587 * img[1, ...] + 0.114 * img[2, ...]
+
+def pixel_accuracy(tmask, predmask):
+    tmask = np.asarray(tmask).astype(np.bool)
+    predmask = np.asarray(predmask).astype(np.bool)
+    return (np.sum(np.logical_and(tmask, predmask)))/(np.sum(tmask))
+    

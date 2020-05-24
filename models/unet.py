@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchsummary import summary
+
 
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
@@ -27,29 +27,31 @@ class UNet(nn.Module):
         x6 = self.up1(x5, x4)
         x7 = self.up2(x6, x3)
         x8 = self.up3(x7, x2)
-        x9 = self.up4(x8, x1)
-        x10 = self.preOutput(x9)
-        x11 = self.output(x10)
-        return torch.sigmoid(x11)
+        x = self.up4(x8, x1)
+        x = self.preOutput(x)
+        x = self.output(x)
+        return x
+
 
 class doubleConv(nn.Module):
     def __init__(self, inCh, outCh):
         super(doubleConv, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels = inCh,
-                               out_channels = outCh,
-                               kernel_size = 3,
-                               padding = 1)
-        self.batchnorm1 = nn.BatchNorm2d(num_features = outCh)
-        self.conv2 = nn.Conv2d(in_channels = outCh,
-                               out_channels = outCh,
-                               kernel_size = 3,
-                               padding = 1)
-        self.batchnorm2 = nn.BatchNorm2d(num_features = outCh)
+        self.conv1 = nn.Conv2d(in_channels=inCh,
+                               out_channels=outCh,
+                               kernel_size=3,
+                               padding=1)
+        self.batchnorm1 = nn.BatchNorm2d(num_features=outCh)
+        self.conv2 = nn.Conv2d(in_channels=outCh,
+                               out_channels=outCh,
+                               kernel_size=3,
+                               padding=1)
+        self.batchnorm2 = nn.BatchNorm2d(num_features=outCh)
 
     def forward(self, x):
         x = F.relu(self.batchnorm1(self.conv1(x)))
         x = F.relu(self.batchnorm2(self.conv2(x)))
         return x
+
 
 class inputConv(nn.Module):
     def __init__(self, inCh, outCh):
@@ -60,27 +62,31 @@ class inputConv(nn.Module):
         x = self.conv(x)
         return x
 
+
 class down(nn.Module):
     def __init__(self, inCh, outCh):
         super(down, self).__init__()
-        self.pool = nn.MaxPool2d(kernel_size = 2)
+        self.pool = nn.MaxPool2d(kernel_size=2)
         self.conv = doubleConv(inCh, outCh)
 
     def forward(self, x):
         x = self.pool(x)
         x = self.conv(x)
         return x
+
+
 class up(nn.Module):
-    def __init__(self, inCh, outCh, bilinear = True):
+    def __init__(self, inCh, outCh, bilinear=True):
         super(up, self).__init__()
-        self.up = nn.ConvTranspose2d(inCh, outCh, kernel_size = 2, stride = 2)
+        self.up = nn.ConvTranspose2d(inCh, outCh, kernel_size=2, stride=2)
         self.conv = doubleConv(inCh, outCh)
 
-    def forward(self, x1, x2):  #x2 is the skip connection
+    def forward(self, x1, x2):  # x2 is the skip connection
         x1 = self.up(x1)
         x = torch.cat([x2, x1], dim=1)
         x = self.conv(x)
         return x
+
 
 class outConv(nn.Module):
     def __init__(self, inCh, outCh):
@@ -90,6 +96,7 @@ class outConv(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         return x
+
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchsummary import summary
+
 
 class LungNet(nn.Module):
     def __init__(self, n_channels, n_classes):
@@ -39,7 +39,7 @@ class LungNet(nn.Module):
         x = self.block12(x)
         x = self.block13(x)
         x = self.block14(x)
-        return torch.sigmoid(x)
+        return x
 
 
 class convBlock(nn.Module):

@@ -6,6 +6,7 @@ import sys
 import time
 from configparser import ConfigParser
 
+import torch
 from torch import optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -17,7 +18,7 @@ import morphsnakes as ms
 import plot
 
 sys.path.append('..')
-# from models import UNet
+from models import LungNet
 # from models import CleanU_Net
 # from models import LungNet
 
@@ -43,8 +44,8 @@ class Config:
         self.batchSize = parser[arg.config_scheme].getint("batchSize")
         self.modelWeight = parser[arg.config_scheme].get("modelWeight")
 
-        RunHistory(time_stamp, parser[arg.config_scheme],
-                   self.logHistoryPath).save_run_history()
+        # RunHistory(time_stamp, parser[arg.config_scheme],
+        #            self.logHistoryPath).save_run_history()
 
 
 class Test(Config):
@@ -55,7 +56,8 @@ class Test(Config):
         imageFiles = glob.glob(self.imagesPath + "/*" + ".png")
         maskFiles = glob.glob(self.masksPath + "/*" + ".png")
 
-        datasetTest = Dataset_ROM(imageFiles, maskFiles, self.size)
+        datasetTest = Dataset_ROM(
+            imageFiles, maskFiles, self.size, convert='RGB')
         loaderTest = torch.utils.data.DataLoader(
             datasetTest, batch_size=self.batchSize, shuffle=False)
 
@@ -70,27 +72,38 @@ class Test(Config):
             preds = preds['out']
             predMasks = torch.sigmoid(preds)  # for bceloss use preds
             #
-
+            btlneck_dice_score = torch.mean(
+                Loss(trueMasks, predMasks).dice_coeff())
             predArray = predMasks.detach().cpu().numpy()
             trueMasksArray = trueMasks.detach().cpu().numpy()
             imagesArray = images.detach().cpu().numpy()
-            predArray = np.where(predArray > 0.5, 1, 0)
+            # predArray = np.where(predArray > 0.5, 1, 0)
 
             for b in range(imagesArray.shape[0]):
                 predMaskArray = predArray[b, 0, :, :]
+                # imgArray = ms.rgb2gray(imagesArray[b, :, :, :])   # for deeplabv3
                 imgArray = imagesArray[b, 0, :, :]
                 tMaskArray = trueMasksArray[b, 0, :, :]
                 init_ls = predMaskArray
                 callback = ms.visual_callback_2d(imgArray)
                 msPredMask = ms.morphological_chan_vese(imgArray, iterations=20,
-                                                          init_level_set=init_ls,
-                                                          smoothing=3, lambda1=1, lambda2=1,
-                                                          iter_callback=callback)
-
-                
-                savePath = os.path.join(test.predMaskPath, test.modelName, time_stamp)
-                plot.mask_comparision(imgArray, tMaskArray, predMaskArray, msPredMask, os.path.join(savePath, str(i) + '.png'))
+                                                        init_level_set=init_ls,
+                                                        smoothing=3, lambda1=1, lambda2=1,
+                                                        iter_callback=callback)
+                # msPredMask = ms.morphological_geodesic_active_contour(imgArray, iterations=200,
+                #                                                       init_level_set=init_ls,
+                #                                                       smoothing=1,
+                #                                                       iter_callback=callback)
+                ms_dice_score = ms.dice_loss(tMaskArray, msPredMask)
+                savePath = os.path.join(
+                    test.predMaskPath, test.modelName, time_stamp)
+                plot.mask_comparision(imgArray, tMaskArray, predMaskArray, msPredMask, os.path.join(
+                    savePath, str(i) + '.png'), btlneck_dice_score.item(), ms_dice_score)
                 i += 1
+                if i > 601:
+                    break
+            if i > 601:
+                break
 
 
 if __name__ == "__main__":
@@ -101,7 +114,7 @@ if __name__ == "__main__":
         '--config_scheme', help='section from config file', required=True)
     args = argParser.parse_args()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # model = LungNet(1, 1).to(device)
+    # model = LungNet(1, 1)
     model = torchvision.models.segmentation.deeplabv3_resnet101(
         pretrained=False, num_classes=1)
     model = torch.nn.DataParallel(model)
