@@ -20,6 +20,7 @@ This research aims to improve the accuracy of Breast Ultrasound Image Segmentati
 
 [1]: https://www.cs.ait.ac.th/~mdailey/cvreadings/Kass-Snakes.pdf "Snakes: Active contour models"
 
+![Image 1](docs/diagram.png)
 --------------------------------------------------------------------------------
 
 ## Installation
