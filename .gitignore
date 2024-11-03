@@ -1,7 +1,6 @@
 data/*
 !data/placeholder.txt
 refs/*
-!refs/placeholder.txt
 codes/myTest.py
 checkpoints/*
 !checkpoints/placeholder.txt
