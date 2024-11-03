@@ -23,3 +23,5 @@ infer/LungNet/*
 !infer/DeepLabV3-UNet/2020-02-12-05-08-39/
 !infer/DeepLabV3-UNet/2020-02-12-04-52-57/
 dsprl.code-workspace
+.idea/
+.vscode/
