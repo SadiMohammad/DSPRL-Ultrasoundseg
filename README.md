@@ -1,4 +1,4 @@
-# DSPRL-Ultrasoundseg
+#  DeepSnake: A Deep Convolutional-Snake Model Combination for Breast Ultrasound Image Segmentation
 
 Welcome to the GitHub repository for my thesis work on Breast Ultrasound Image Segmentation. This repository contains the code, datasets, and my full thesis document as a book.
 
@@ -6,11 +6,12 @@ Welcome to the GitHub repository for my thesis work on Breast Ultrasound Image S
 
 1. [Overview](#overview)
 2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Visualizing Results](#visualizing-results)
-5. [Thesis](#thesis)
-6. [Contributing](#contributing)
-7. [License](#license)
+3. [Dataset](#dataset)
+4. [Usage](#usage)
+5. [Visualizing Results](#visualizing-results)
+6. [Thesis](#thesis)
+7. [Contributing](#contributing)
+8. [License](#license)
 
 --------------------------------------------------------------------------------
 
@@ -20,7 +21,7 @@ This research aims to improve the accuracy of Breast Ultrasound Image Segmentati
 
 [1]: https://www.cs.ait.ac.th/~mdailey/cvreadings/Kass-Snakes.pdf "Snakes: Active contour models"
 
-![Image 1](docs/deepsnake_diagram.png)
+![deepsnake_diagram](docs/deepsnake_diagram.png)
 --------------------------------------------------------------------------------
 
 ## Installation
@@ -38,6 +39,24 @@ To get started, please clone this repository and set up the required environment
 1. Clone the repository:<br>
   `git clone https://github.com/SadiMohammad/DSPRL-Ultrasoundseg.git`<br>
   `cd thesis-computer-vision`
+
+--------------------------------------------------------------------------------
+
+## Dataset
+
+All of our experiments are conducted on the BUSI [2] and BUSIS [3] dataset. 
+
+### Training Protocols
+
+We used BUSI dataset’s 95% data as training set and 5% for testing. Of this 95% training set, 15% were used for validation. We further examine our approach by testing it on BUSIS dataset. Hyper-parameter’s were - 
+
+- training images were cropped to 224x224.
+- learning rate was varied between 10<sup>-3</sup> to 10<sup>-6</sup>.
+- weighted bce-dice loss was used during training process.
+- Image pre-processing like brightness-contrast adjustment was used, but they did not make any difference as cnn-based model are mostly invariant to them. Also 2d Cepstrum was used for pre-processing. But it did not make any improvement.
+
+[2]: https://www.sciencedirect.com/science/article/pii/S2352340919312181 "Dataset of breast ultrasound images"
+[3]: https://pmc.ncbi.nlm.nih.gov/articles/PMC9025635/ "BUSIS: A Benchmark for Breast Ultrasound Image Segmentation"
 
 --------------------------------------------------------------------------------
 
@@ -78,6 +97,9 @@ Once training is complete, you can evaluate the model's performance on the test 
 
 Running `infer.py` or `inferWithMS.py` saves samples output of the models in `./infer/<model_name>`<br>
 There is also an option for viewing the baseline modellearning over epochs by running `./codes/visualization.py`
+
+In the following table, we compare the performance of our proposed DeepSnake against the baselines in terms of mIoU, mDice, pixel accuracy and Boundary F1 score.
+![result_table](docs/result_table.png)
 
 ### Example Visualization
 
