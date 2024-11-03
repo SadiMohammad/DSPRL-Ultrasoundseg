@@ -37,8 +37,8 @@ To get started, please clone this repository and set up the required environment
 ### Setting Up
 
 1. Clone the repository:<br>
-  `git clone https://github.com/SadiMohammad/DSPRL-Ultrasoundseg.git`<br>
-  `cd thesis-computer-vision`
+  `git clone https://github.com/SadiMohammad/dsprl-deepsnake.git`<br>
+  `cd /codes`
 
 --------------------------------------------------------------------------------
 
@@ -68,28 +68,37 @@ This section provides examples on how to run the experiments and reproduce the r
 
 To train the model, run the following command. Model configurations such as batch size, learning rate, paths, number of epochs etc can be modified in config.ini.
 
-- `cd /codes`
-
-- `python train.py --config_filename <config filename with path> --config_scheme <section from config file>`<br>
-  e.g. `python train.py --config_filename config.ini --config_scheme DEFAULT`
+```bash
+python train.py --config_filename <config filename with path> --config_scheme <section from config file>
+```
+  e.g. 
+```bash
+python train.py --config_filename config.ini --config_scheme DEFAULT
+```
 
 Training logs, including loss and metrics results, are saved in logs/.
 
 ### Evaluating Performance
 
-- `cd /codes`
-
-- `python infer.py --config_filename <config filename with path> --config_scheme <section from config file>`<br>
-  e.g. `python infer.py --config_filename config.ini --config_scheme TEST`
+```bash
+python infer.py --config_filename <config filename with path> --config_scheme <section from config file>
+```
+  e.g. 
+```bash
+python infer.py --config_filename config.ini --config_scheme TEST
+```
 
 #### Evaluating Performance with MorphSnake
 
 Once training is complete, you can evaluate the model's performance on the test set. Trained model's weight can be added in config.ini. Run the evaluation script:
 
-- `cd /codes`
-
-- `python inferWithMS.py --config_filename <config filename with path> --config_scheme <section from config file>`<br>
-  e.g. `python inferWithMS.py --config_filename config.ini --config_scheme TEST`
+```bash
+python inferWithMS.py --config_filename <config filename with path> --config_scheme <section from config file>
+```
+  e.g. 
+```bash
+python inferWithMS.py --config_filename config.ini --config_scheme TEST
+```
 
 --------------------------------------------------------------------------------
 
