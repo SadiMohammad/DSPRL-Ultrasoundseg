@@ -37,8 +37,12 @@ To get started, please clone this repository and set up the required environment
 ### Setting Up
 
 1. Clone the repository:<br>
-  `git clone https://github.com/SadiMohammad/dsprl-deepsnake.git`<br>
-  `cd /codes`
+  ```bash
+  git clone https://github.com/SadiMohammad/dsprl-deepsnake.git
+  ```
+  ```bash
+  cd codes
+  ```
 
 --------------------------------------------------------------------------------
 
